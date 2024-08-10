@@ -1,8 +1,15 @@
 #include <coroutine>
+#include <initializer_list>
 #include <iostream>
-#include <stdexcept>
+#include <type_traits>
+#include <utility>
 
+
+template<typename T>
 struct Generator {
+
+  class ExhaustedException : std::exception {};
+
   struct promise_type {
     std::suspend_never initial_suspend() { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
@@ -11,23 +18,37 @@ struct Generator {
       return Generator{std::coroutine_handle<promise_type>::from_promise(*this)};
     }
 
-    std::suspend_always await_transform(int value) {
+    std::suspend_always await_transform(T value) {
       this->value = value;
       this->is_ready = true;
       return {};
     }
 
-    std::suspend_always yield_value(int value) {
+    std::suspend_always yield_value(T value) {
       this->value = value;
       this->is_ready = true;
       return {};
     }
 
-    int value = -1;
+    void return_void() {}
+
+    T value = -1;
     bool is_ready = false;
   };
 
   std::coroutine_handle<promise_type> handle;
+
+  explicit Generator(std::coroutine_handle<promise_type> handle) noexcept: handle(handle) {}
+  Generator(const Generator&) = delete;
+  Generator& operator=(const Generator&) = delete;
+
+  Generator(Generator&& other) noexcept: handle(std::exchange(other.handle, {})) {}
+
+  ~Generator() {
+    if (handle) {
+      handle.destroy();
+    }
+  }
 
   bool has_next() {
     if (!handle || handle.done()) {
@@ -38,45 +59,75 @@ struct Generator {
     }
     if (handle.done()) {
       return false;
+    } else {
+      return true;
     }
-    return true;
   }
 
-  int next() {
+  T next() {
     if (has_next()) {
       handle.promise().is_ready = false;
       return handle.promise().value;
     }
-    return 555;
-    throw std::runtime_error("there is no valid value");
+    throw ExhaustedException();
   }
 
-  ~Generator() {
-    if (handle) {
-      handle.destroy();
+  static Generator<T> from(std::initializer_list<T> init) {
+    for (auto& elem: init) {
+      co_yield elem;
     }
   }
+
+  template<typename ...Args>
+  requires std::conjunction_v<std::is_same<T, Args>...>
+  static Generator from(Args ... args) {
+    (co_yield args, ...);
+  }
+
+  template<typename Func>
+  Generator<std::invoke_result_t<Func, T>> map(Func func) {
+    while(has_next()) {
+      co_yield func(next());
+    }
+  }
+
+  template<typename Func>
+  Generator filter(Func func) {
+    while (has_next()) {
+      auto tmp = next();
+      if (func(tmp)) {
+        co_yield tmp;
+      }
+    }
+  }
+
+  Generator take(int n) {
+    int i = 0;
+    while(i++ < n && has_next()) {
+      co_yield next();
+    }
+  }
+
+  template<typename Func>
+  void for_each(Func func) {
+    while (has_next()) {
+      func(next());
+    }
+  }
+
 };
 
-Generator sequence() noexcept {
-  int i = 0;
-  while(i < 5) {
-    co_await i++;
-  }
-  while(i < 10) {
-    co_yield i++;
-  }
-}
+
+
 
 int main() {
-
-  Generator generator = sequence();
-  for (int i = 0; i < 10 ; i++) {
-    if (generator.has_next()) {
-      std::cout << "index: " << i << " value: " <<  generator.next() << std::endl;
-    } else {
-      break;
-    }
-  }
+  auto generator = Generator<int>::from(1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
+  generator.filter([](int i) {
+    return i % 2 == 0;
+  }).map([](int i) {
+    return i * 3;
+  }).take(3).for_each([](int i) {
+    std::cout << "value: " << i << "\n";
+  });
   return 0;
 }
