@@ -11,7 +11,8 @@ add_compile_options(
 
 include_directories(/usr/include/c++/11)
 
-add_subdirectory(./00.call)
+add_subdirectory(./00.previous_awaiter)
 add_subdirectory(./01.generator)
 add_subdirectory(./02.task)
+add_subdirectory(./03.timer)
 
