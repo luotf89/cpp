@@ -10,5 +10,7 @@ add_compile_options(
     -fcoroutines
 )
 
+add_subdirectory(./function)
 add_subdirectory(./tree/bst)
 add_subdirectory(./tree/avl)
+add_subdirectory(./tree/rbt)

@@ -3,8 +3,9 @@
 
 #include <stdexcept>
 #include <iostream>
-#include "../utils/walk.h"
-#include "../utils/visualization.h"
+#include <functional>
+#include "../utils/utils.h"
+
 
 namespace algorithm {
 
@@ -20,27 +21,29 @@ struct BSNode {
 template <typename KeyTy, typename ValueTy, typename Cmp = CMP<KeyTy>>
 class BSTree {
  public:
+  using KeyType = KeyTy;
+  using ValueType = ValueTy;
   using NodeTy = BSNode<KeyTy, ValueTy>;
 
   void insert(std::pair<KeyTy, ValueTy> elem) {
-    root = insertImpl(elem, root);
+    root_ = insertImpl(elem, root_);
   }
 
   void remove(KeyTy key) {
-    root = removeImpl(key, root);
+    root_ = removeImpl(key, root_);
   }
   
   template<WalkOrder order>
   void walk(std::function<void(NodeTy*)> func) {
-    walkImpl<order>(root, func);
+    walkImpl<order>(root_, func);
   }
 
   void visualization() {
-    algorithm::visualization(root);
+    algorithm::visualization(root_);
   }
 
   NodeTy* find(KeyTy key) {
-    return findImpl(key, root);
+    return findImpl(key, root_, cmp_);
   }
 
   BSTree() = default;
@@ -51,19 +54,6 @@ class BSTree {
   }
 
  private:
-  NodeTy* findImpl(const KeyTy& key, NodeTy* curr) {
-    if (!curr) {
-      return nullptr;
-    }
-    if (cmp_(key, curr->key_) > 0) {
-      return findImpl(key, curr->left_);
-    } else if (cmp_(key, curr->key_) < 0) {
-      return findImpl(key, curr->right_);
-    } else {
-      return curr;
-    }
-  }
-
 
   NodeTy* insertImpl(std::pair<KeyTy, ValueTy>& elem, NodeTy* curr) {
     if (!curr) {
@@ -75,10 +65,6 @@ class BSTree {
     } else if (cmp_(elem.first, curr->key_) < 0) {
       curr->right_ = insertImpl(elem, curr->right_);
     } else {
-      std::cout << "curr: " << curr->value_
-                << " key: " << elem.first
-                << " cmp: " << cmp_(elem.first, curr->key_)
-                << std::endl;
       throw std::runtime_error("curr value alread exist");
     }
     return curr;
@@ -98,10 +84,12 @@ class BSTree {
       if (!left) {
         delete curr;
         return right;
-      } else if (!right) {
+      }
+      if (!right) {
         delete curr;
         return left;
-      } else if (!right->left_) {
+      }
+      if (!right->left_) {
         right->left_ = curr->left_;
         delete curr;
         return right;
@@ -115,7 +103,7 @@ class BSTree {
           prev2 = prev2->left_;
         }
         prev0->left_ = prev1->right_;
-        prev1->left_ = curr->left_;
+        prev1->left_ = left;
         prev1->right_ = right;
         delete curr;
         return prev1;
@@ -124,7 +112,7 @@ class BSTree {
     return curr;
   }
 
-  NodeTy* root = nullptr;
+  NodeTy* root_ = nullptr;
   Cmp cmp_{};
 };
 

@@ -5,12 +5,11 @@ https://www.cnblogs.com/gonghr/p/16064797.html
 
 #pragma once
 
-#include <cstddef>
 #include <iostream>
 #include <stdexcept>
+#include <functional>
 
-#include "../utils/walk.h"
-#include "../utils/visualization.h"
+#include "../utils/utils.h"
 
 namespace algorithm {
 
@@ -48,7 +47,7 @@ class AVLTree {
   }
 
   NodeTy* find(KeyTy key) {
-    return findImpl(key, root_);
+    return findImpl(key, root_, cmp_);
   }
 
   AVLTree() = default;
@@ -59,19 +58,6 @@ class AVLTree {
   }
 
  private:
-
-  NodeTy* findImpl(const KeyTy& key, NodeTy* curr) {
-    if (!curr) {
-      return nullptr;
-    }
-    if (cmp_(key, curr->key_) > 0) {
-      return findImpl(key, curr->left_);
-    } else if (cmp_(key, curr->key_) < 0) {
-      return findImpl(key, curr->right_);
-    } else {
-      return curr;
-    }
-  }
 
   NodeTy* insertImpl(std::pair<KeyTy, ValueTy>& elem, NodeTy* curr) {
     if (!curr) {
@@ -103,8 +89,6 @@ class AVLTree {
         }
       }
     } else {
-      std::cout << "curr: " << curr->value_ << " key: " << elem.first
-                << " cmp: " << cmp_(elem.first, curr->key_) << std::endl;
       throw std::runtime_error("curr value alread exist");
     }
     return curr;
