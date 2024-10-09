@@ -5,26 +5,47 @@ https://www.cnblogs.com/gonghr/p/16064797.html
 
 #include "avl.h"
 #include <iostream>
+#include <string>
 
 
 using namespace algorithm;
 
-int main() {
+void test0() {
+    std::vector<int> nums = {4, 2, 6, 1, 3, 5, 15, 7, 16, 14};
     AVLTree<int, int> avl;
-    avl.insert({1, 1});
-    avl.insert({2, 2});
-    avl.insert({3, 3});
-    avl.insert({4, 4});
-    avl.insert({5, 5});
-    avl.insert({6, 6});
-    avl.insert({7, 7});
-    avl.insert({8, 8});
-    avl.insert({9, 9});
-    // avl.visualization();
-    avl.remove(1);
-    avl.remove(3);
-    avl.visualization();
-    auto curr = avl.find(10);
-    std::cout << curr << std::endl;
+    for (auto num : nums) {
+        avl.insert({num, num});
+        if (avl.is_balanced() == false) {
+            std::cout << "insert failed: " << num << std::endl;
+            break;
+        }
+    }
+    std::cout << "================= insert =============\n";
+    avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
+        std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
+    });
+    // avl.remove(6);
+    // avl.remove(15);
+    // avl.remove(16);
+    std::cout << "================= remove =============\n";
+    // avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
+    //     std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
+    // });
+    // std::cout << "is_balanced: " << avl.is_balanced() << std::endl;
+    for (auto num : nums) {
+        avl.remove(num);
+        if (avl.is_balanced() == false) {
+            std::cout << "remove failed: " << num << std::endl;
+            break;
+        }
+    }
+    std::cout << "================= print =============\n";
+    avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
+        std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
+    });
+}
+
+int main() {
+    test0();
     return 0;
 }

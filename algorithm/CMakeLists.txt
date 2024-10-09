@@ -11,6 +11,7 @@ add_compile_options(
 )
 
 add_subdirectory(./function)
+add_subdirectory(./shared_ptr)
 add_subdirectory(./tree/bst)
 add_subdirectory(./tree/avl)
 add_subdirectory(./tree/rbt)

@@ -22,7 +22,7 @@ int main() {
     bst.insert({9, 9});
     // bst.visualization();
     bst.remove(5);
-    bst.visualization();
+    // bst.visualization();
     auto curr = bst.find(10);
     std::cout << curr << std::endl;
     return 0;
