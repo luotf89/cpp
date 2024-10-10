@@ -4,6 +4,8 @@ https://www.cnblogs.com/gonghr/p/16064797.html
 */
 
 #include "avl.h"
+#include <cstddef>
+#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -15,37 +17,46 @@ void test0() {
     AVLTree<int, int> avl;
     for (auto num : nums) {
         avl.insert({num, num});
-        if (avl.is_balanced() == false) {
+        if (avl.checkValid() == false) {
             std::cout << "insert failed: " << num << std::endl;
-            break;
+            exit(1);
         }
     }
-    std::cout << "================= insert =============\n";
-    avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
-        std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
-    });
-    // avl.remove(6);
-    // avl.remove(15);
-    // avl.remove(16);
-    std::cout << "================= remove =============\n";
-    // avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
-    //     std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
-    // });
-    // std::cout << "is_balanced: " << avl.is_balanced() << std::endl;
     for (auto num : nums) {
         avl.remove(num);
-        if (avl.is_balanced() == false) {
+        if (avl.checkValid() == false) {
             std::cout << "remove failed: " << num << std::endl;
-            break;
+            exit(1);
         }
     }
-    std::cout << "================= print =============\n";
-    avl.walk<WalkOrder::INORDER>([](AVLTree<int,int>::NodeTy* node) {
-        std::cout << "key:"<< node->key_ << " value: " << node->value_ << std::endl;
-    });
+}
+
+void test1() {
+    srand((unsigned int)time(0));
+    constexpr size_t N = 10000;
+    std::vector<int> nums(N);
+    for (size_t i = 0; i < N; ++i) {
+        nums[i] = rand() % 1000000;
+    }
+    AVLTree<int, int> avl;
+    for (auto num : nums) {
+        avl.insert({num, num});
+        if (avl.checkValid() == false) {
+            std::cout << "insert failed: " << num << std::endl;
+            exit(1);
+        }
+    }
+    for (auto num : nums) {
+        avl.remove(num);
+        if (avl.checkValid() == false) {
+            std::cout << "remove failed: " << num << std::endl;
+            exit(1);
+        }
+    }
 }
 
 int main() {
     test0();
+    test1();
     return 0;
 }

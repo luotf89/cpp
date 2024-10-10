@@ -4,12 +4,14 @@ https://blog.csdn.net/melonyzzZ/article/details/133149060
 */
 
 #pragma once
-#include <iostream>
+#include <sstream>
+#include <fstream>
 #include <asm-generic/errno.h>
 #include <cassert>
 #include <cstdlib>
 #include <functional>
 #include <utility>
+#include <vector>
 #include "../utils/utils.h"
 
 namespace algorithm {
@@ -74,8 +76,61 @@ class AVLTree {
     walkImpl<order>(root_, func);
   }
 
-  void visualization(std::string filename = "avl.dot") {
-    algorithm::visualization(root_, filename);
+  void visualization(std::string filename = "graph.dot") {
+    std::ostringstream oss;
+    oss << "digraph demo {\n";
+    std::size_t ident = 4;
+    auto print_ident = [&](){
+        oss << std::string(ident, ' ');
+    };
+    std::size_t nullptr_id = 0;
+    walkImpl<WalkOrder::PREVORDER>(root_, [&](NodeTy* curr) {
+        print_ident();
+        oss << "\"key: " << curr->key_ << " value: " << curr->value_
+            << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+            << "\"\n";
+        if (curr->left_) {
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"key: " << curr->left_->key_ << " value: " << curr->left_->value_
+                << " parent: " <<curr->key_
+                << "\"\n";
+        } else {
+            print_ident();
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            nullptr_id++;
+        }
+        if (curr->right_) {
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_ 
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"key: " << curr->right_->key_ << " value: " << curr->right_->value_
+                << " parent: " <<curr->key_
+                << "\"\n";
+        } else {
+            print_ident();
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            nullptr_id++;
+        }
+    });
+    ident -= 4;
+    print_ident();
+    oss << "}\n";
+    std::ofstream fw(filename);
+    fw << oss.str();
   }
 
   NodeTy* find(KeyTy key) {
@@ -89,11 +144,29 @@ class AVLTree {
     });
   }
 
-  bool is_balanced() {
-    return isBalancedImpl(root_);
+  bool checkValid() {
+    auto ret1 = isBalancedImpl(root_);
+    auto ret2 = checkDataValid();
+    return isBalancedImpl(root_) && checkDataValid();
   }
 
  private:
+  bool checkDataValid() {
+    std::vector<KeyTy> keys;
+    walkImpl<WalkOrder::INORDER>(root_, [&](NodeTy* curr) {
+      keys.push_back(curr->key_);
+    });
+    if (keys.size() < 2) {
+      return true;
+    }
+    for (int i = 1; i < keys.size(); i++) {
+      if (cmp_(keys[i-1], keys[i]) <= 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   bool isBalancedImpl(NodeTy* curr) {
     if (!curr) {
       return true;

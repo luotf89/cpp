@@ -2,7 +2,8 @@
 
 
 #include <stdexcept>
-#include <iostream>
+#include <sstream>
+#include <fstream>
 #include <functional>
 #include "../utils/utils.h"
 
@@ -38,8 +39,61 @@ class BSTree {
     walkImpl<order>(root_, func);
   }
 
-  void visualization() {
-    algorithm::visualization(root_);
+  void visualization(std::string filename = "graph.dot") {
+    std::ostringstream oss;
+    oss << "digraph demo {\n";
+    std::size_t ident = 4;
+    auto print_ident = [&](){
+        oss << std::string(ident, ' ');
+    };
+    std::size_t nullptr_id = 0;
+    walkImpl<WalkOrder::PREVORDER>(root_, [&](NodeTy* curr) {
+        print_ident();
+        oss << "\"key: " << curr->key_ << " value: " << curr->value_
+            << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+            << "\"\n";
+        if (curr->left_) {
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"key: " << curr->left_->key_ << " value: " << curr->left_->value_
+                << " parent: " <<curr->key_
+                << "\"\n";
+        } else {
+            print_ident();
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            nullptr_id++;
+        }
+        if (curr->right_) {
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_ 
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"key: " << curr->right_->key_ << " value: " << curr->right_->value_
+                << " parent: " <<curr->key_
+                << "\"\n";
+        } else {
+            print_ident();
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"->";
+            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+            nullptr_id++;
+        }
+    });
+    ident -= 4;
+    print_ident();
+    oss << "}\n";
+    std::ofstream fw(filename);
+    fw << oss.str();
   }
 
   NodeTy* find(KeyTy key) {

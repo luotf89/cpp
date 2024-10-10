@@ -1,11 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
-#include <cstddef>
-#include <fstream>
-#include <sstream>
-#include <string>
+
 
 namespace algorithm {
 
@@ -107,8 +103,14 @@ NodeTy* successorImpl(NodeTy* curr) {
 template <WalkOrder order, typename NodeTy>
 requires Constraint<NodeTy>
 void walkImpl(NodeTy* curr, auto func) {
-  if (!curr) {
-    return;
+  if constexpr (requires { NodeTy::nil;}) {
+    if (!curr || curr == NodeTy::nil) {
+      return;
+    } 
+  } else {  
+    if (!curr) {
+      return;
+    }
   }
   if (order == WalkOrder::PREVORDER) {
     func(curr);
@@ -134,68 +136,6 @@ int height(NodeTy* curr) {
     return 0;
   }
   return std::max(height(curr->left_), height(curr->right_)) + 1;
-}
-
-template<typename NodeTy>
-requires Constraint<NodeTy> || requires (NodeTy t) {
-    t.key_;
-    t.value_;
-}
-void visualization(NodeTy* curr, std::string filename = "graph.dot") {
-    std::ostringstream oss;
-    oss << "digraph demo {\n";
-    std::size_t ident = 4;
-    auto print_ident = [&](){
-        oss << std::string(ident, ' ');
-    };
-    std::size_t nullptr_id = 0;
-    walkImpl<WalkOrder::PREVORDER>(curr, [&](NodeTy* curr) {
-        print_ident();
-        oss << "\"key: " << curr->key_ << " value: " << curr->value_
-            << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
-            << "\"\n";
-        if (curr->left_) {
-            print_ident();
-            oss << "\"key: " << curr->key_ << " value: " << curr->value_
-                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
-                << "\"->";
-            oss << "\"key: " << curr->left_->key_ << " value: " << curr->left_->value_
-                << " parent: " <<curr->key_
-                << "\"\n";
-        } else {
-            print_ident();
-            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
-            print_ident();
-            oss << "\"key: " << curr->key_ << " value: " << curr->value_
-                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
-                << "\"->";
-            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
-            nullptr_id++;
-        }
-        if (curr->right_) {
-            print_ident();
-            oss << "\"key: " << curr->key_ << " value: " << curr->value_ 
-                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
-                << "\"->";
-            oss << "\"key: " << curr->right_->key_ << " value: " << curr->right_->value_
-                << " parent: " <<curr->key_
-                << "\"\n";
-        } else {
-            print_ident();
-            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
-            print_ident();
-            oss << "\"key: " << curr->key_ << " value: " << curr->value_
-                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
-                << "\"->";
-            oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
-            nullptr_id++;
-        }
-    });
-    ident -= 4;
-    print_ident();
-    oss << "}\n";
-    std::ofstream fw(filename);
-    fw << oss.str();
 }
 
 } // namespace algorithm

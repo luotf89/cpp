@@ -4,7 +4,11 @@
 
 #pragma once
 
+#include <fstream>
+#include <sstream>
+#include <iostream>
 #include <cassert>
+#include <vector>
 #include "../utils/utils.h"
 
 namespace algorithm {
@@ -60,15 +64,17 @@ public:
                 return {false, curr};
             }
         }
-        curr = new NodeTy{elem.first, elem.second, Color::RED, prev};
+        curr = new NodeTy{.key_= elem.first, .value_= elem.second,
+                          .color_ = Color::RED, .parent_ = prev};
         if (prev == NodeTy::nil) {
             root_ = curr;
             root_->color_ = Color::BLACK;
-        }
-        if (cmp_(elem.first, prev->key_) > 0) {
-            prev->left_ = curr;
         } else {
-            prev->right_ = curr;
+            if (cmp_(elem.first, prev->key_) > 0) {
+                prev->left_ = curr;
+            } else {
+                prev->right_ = curr;
+            }
         }
         auto ret = curr;
         fixAfterInsert(curr);
@@ -85,7 +91,151 @@ public:
         return false;
     }
 
+    bool checkValid() {
+        if (root_->color_ != Color::BLACK) {
+            std::cout << "root is not black" << std::endl;
+            return false;
+        }
+        if (checkColorValid(root_) == false) {
+            std::cout << "color is not valid" << std::endl;
+            return false;
+        }
+        if (checkBlackHeightValid(root_) == false) {
+            std::cout << "black height is not valid" << std::endl;
+            return false;
+        }
+        if (checkDataValid() == false) {
+            std::cout << "data is not valid" << std::endl;
+            return false;
+        }
+        return true;
+        // return root_->color_ == Color::BLACK &&
+        //        checkColorValid(root_)&&
+        //        checkBlackHeightValid(root_) &&
+        //        checkDataValid();
+    }
+
+    void visualization(std::string filename = "graph.dot") {
+        std::ostringstream oss;
+        oss << "digraph demo {\n";
+        std::size_t ident = 4;
+        auto print_ident = [&](){
+            oss << std::string(ident, ' ');
+        };
+        std::size_t nullptr_id = 0;
+        walkImpl<WalkOrder::PREVORDER>(root_, [&](NodeTy* curr) {
+            print_ident();
+            oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                << " color: " << (curr->color_ == Color::RED ? "red" : "black")
+                << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                << "\"\n";
+            if (curr->left_) {
+                print_ident();
+                oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                    << " color: " << (curr->color_ == Color::RED ? "red" : "black")
+                    << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                    << "\"->";
+                oss << "\"key: " << curr->left_->key_ << " value: " << curr->left_->value_
+                    << " color: " << (curr->left_->color_ == Color::RED ? "red" : "black")
+                    << " parent: " <<curr->key_
+                    << "\"\n";
+            } else {
+                print_ident();
+                oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+                print_ident();
+                oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                    << " color: " << (curr->color_ == Color::RED ? "red" : "black")
+                    << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                    << "\"->";
+                oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+                nullptr_id++;
+            }
+            if (curr->right_) {
+                print_ident();
+                oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                    << " color: " << (curr->color_ == Color::RED ? "red" : "black")
+                    << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                    << "\"->";
+                oss << "\"key: " << curr->right_->key_ << " value: " << curr->right_->value_
+                    << " color: " << (curr->right_->color_ == Color::RED ? "red" : "black")
+                    << " parent: " <<curr->key_
+                    << "\"\n";
+            } else {
+                print_ident();
+                oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+                print_ident();
+                oss << "\"key: " << curr->key_ << " value: " << curr->value_
+                    << " color: " << (curr->color_ == Color::RED ? "red" : "black")
+                    << " parent: " << (curr->parent_? std::to_string(curr->parent_->key_) : "nullptr")
+                    << "\"->";
+                oss << "\"nullptr:" << nullptr_id << "\"[style=invis]\n";
+                nullptr_id++;
+            }
+        });
+        ident -= 4;
+        print_ident();
+        oss << "}\n";
+        std::ofstream fw(filename);
+        fw << oss.str();
+    }
+
 private:
+    bool checkDataValid() {
+        std::vector<KeyTy> keys;
+        walkImpl<WalkOrder::INORDER>(root_, [&](NodeTy* curr) {
+            keys.push_back(curr->key_);
+        });
+        if (keys.size() < 2) {
+            return true;
+        }
+        for (int i = 1; i < keys.size(); i++) {
+            if (cmp_(keys[i-1], keys[i]) <= 0) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool checkColorValid(NodeTy* curr) {
+        if (curr == NodeTy::nil) {
+            return true;
+        }
+        if (curr->color_ == Color::RED) {
+            if (curr->left_->color_ == Color::RED) {
+                return false;
+            }
+            if (curr->right_->color_ == Color::RED) {
+                return false;
+            }
+        } 
+        return checkColorValid(curr->left_) &&
+               checkColorValid(curr->right_);
+    }
+
+    int blackHeight(NodeTy* curr) {
+        if (curr == NodeTy::nil) {
+            return 0;
+        }
+        int left_height = blackHeight(curr->left_);
+        int right_height = blackHeight(curr->right_);
+        int max_height = std::max(left_height, right_height);
+        return curr->color_ == Color::BLACK? max_height + 1 : max_height;
+    }
+
+    bool checkBlackHeightValid(NodeTy* curr) {
+        if (curr == NodeTy::nil) {
+            return true;
+        }
+        int left_height = blackHeight(curr->left_);
+        int right_height = blackHeight(curr->right_);
+        if (left_height != right_height) {
+            return false;
+        }
+        return checkBlackHeightValid(curr->left_) &&
+               checkBlackHeightValid(curr->right_);
+    }
+
+
 
     void transplant(NodeTy* u, NodeTy* v) {
         if (u->parent_ == NodeTy::nil) //u的父节点为空
@@ -155,12 +305,12 @@ private:
     */
     void rightRotary(NodeTy* y) {
         auto  x = y->left_;
-        if (x->right_ != NodeTy::nil) {
-            x->right_->parent_ = x;
-        }
         y->left_ = x->right_;
+        if (x->right_ != NodeTy::nil) {
+            x->right_->parent_ = y;
+        }
         x->parent_ = y->parent_;
-        if (y->parent_ != NodeTy::nil) {
+        if (y->parent_ == NodeTy::nil) {
             root_ = x;
         } else if (y->parent_->left_ == y) {
             y->parent_->left_ = x;
@@ -189,7 +339,7 @@ private:
         if (x->parent_ == NodeTy::nil) {
             root_ = y;
         } else if (x->parent_->left_ == x) {
-            x->parent_->left_ = x;
+            x->parent_->left_ = y;
         } else {
             x->parent_->right_ = y;
         }
@@ -294,6 +444,7 @@ private:
         }
         x->color_ = Color::BLACK;
     }
+
     NodeTy* root_ = NodeTy::nil;
     Cmp cmp_;
 };
