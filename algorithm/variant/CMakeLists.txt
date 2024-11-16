@@ -1,0 +1,1 @@
+add_executable(varian test_variant.cpp)
