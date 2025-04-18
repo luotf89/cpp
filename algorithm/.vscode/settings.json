@@ -4,7 +4,7 @@
     "clangd.arguments": [
     "--all-scopes-completion",
     "--clang-tidy",
-    "--compile-commands-dir=/home/afei/workspace/test/cpp/coroutine/build",
+    "--compile-commands-dir=/home/afei/workspace/test/cpp/algorithm/build",
     "--completion-style=bundled",
     "--enable-config",
     "--fallback-style=Google",
