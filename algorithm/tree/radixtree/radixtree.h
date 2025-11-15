@@ -257,12 +257,14 @@ bool RadixTree<T>::isValidImpl(std::shared_ptr<RadixTreeNode<T>> node) {
     return false;
   }
   if (node->children_.empty()) {
-    return true;
-  } else if (node->children_.size() == 1) {
-    if (node != root_ && ! node->is_end_) {
-      std::cout << "node is not end and children num is one\n";
+    if (node != root_ && !node->is_end_) {
       return false;
     }
+    return true;
+  } 
+  if (node != root_ && node->children_.size() == 1 && ! node->is_end_) {
+    std::cout << "node is not end and children num is one\n";
+    return false;
   }
   if (!node->is_end_ && !node->metas_.empty()) {
     std::cout << "node is not end but not empty\n";
