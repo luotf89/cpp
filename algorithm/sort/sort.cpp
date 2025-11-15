@@ -59,15 +59,14 @@ std::span<T> merge_sort(std::span<T> nums) {
     auto last = merge_sort(nums.subspan(mid, size - mid));
     int i = 0;
     int j = 0;
-    int k = 0; 
 
     while (i < first.size() && j < last.size()) {
         while (i < first.size() && j < last.size() && cmp(first[i], last[j])) {
-            nums[k++] = first[i++];
+            i++;
         }
         while (i < first.size() && j < last.size() && !cmp(first[i], last[j])) {
-            T tmp = first[i++];
-            nums[k++] = last[j];
+            T tmp = first[i];
+            first[i++] = last[j];
             int idx = j;
             while (idx + 1 < last.size() && cmp(last[idx + 1], tmp)) {
                 last[idx] = last[idx + 1];
