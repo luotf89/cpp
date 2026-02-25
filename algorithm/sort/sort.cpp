@@ -8,7 +8,9 @@
 #include <vector>
 #include <random>
 #include <span>
-
+/*
+实测性能需要额外空间的性能要好很多
+*/
 // /*
 // 需要额外空间做归并
 // */
@@ -80,14 +82,16 @@ std::span<T> merge_sort(std::span<T> nums) {
 }
 
 
-std::vector<int32_t> generate_data(size_t size) {
-    std::vector<int32_t> nums(size);
+std::vector<int32_t> generate_data(uint64_t seed) {
     // uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
-    uint64_t seed = 0;
+    // uint64_t seed = 0;
+    std::cout << seed << std::endl;
     std::mt19937 gen(seed);
     constexpr int32_t low = 1;
-    constexpr int32_t high = 100;
+    constexpr int32_t high = 100000;
     std::uniform_int_distribution<> dis(low, high);
+    auto size = dis(gen);
+    std::vector<int32_t> nums(size);
     for (auto i = 0 ; i < size; i++) {
         nums[i] = dis(gen);
     }
@@ -113,13 +117,16 @@ bool check_result(std::span<T> nums) {
 }
 
 int main() {
-    constexpr size_t size = 110;
-    auto nums = generate_data(size);
-    merge_sort(std::span(nums));
-    if (!check_result(std::span(nums))) {
-        std::cout << "sort error!\n";
-    } else {
-        std::cout << "pass!\n";
+    for (int i = 0; i < 100; i++) {
+        // uint64_t seed = std::chrono::high_resolution_clock::now().time_since_epoch().count();
+        uint64_t seed = i;
+        auto nums = generate_data(seed);
+        merge_sort(std::span(nums));
+        if (!check_result(std::span(nums))) {
+            std::cout << "sort error!\n";
+        } else {
+            std::cout << "pass!\n";
+        }
     }
 }
 
