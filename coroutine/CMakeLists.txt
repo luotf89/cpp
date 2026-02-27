@@ -10,5 +10,4 @@ add_compile_options(
 )
 
 add_subdirectory(./generator)
-
-
+add_subdirectory(./timer)
